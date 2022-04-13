@@ -6,7 +6,7 @@ const { Option } = Select;
 
 interface EasySelectProps {
     autoValue?: string;
-    dataSource?: any[];
+    dataSource?: object[];
     clearValueRequest?: boolean;
     isLazy?: boolean;
     auto?: boolean;
