@@ -21,5 +21,5 @@ export interface HeaderProps {
     hideSearch?: boolean;
     hideReset?: boolean;
     onSubmit?: (value: object) => void;
-    formOption: object;
+    formOption?: object;
 }
