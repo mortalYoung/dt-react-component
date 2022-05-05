@@ -23,3 +23,13 @@ export interface HeaderProps {
     onSubmit?: (value: object) => void;
     formOption?: object;
 }
+
+export interface ContentProps {
+    styles?: object;
+    dataSource?: object[];
+    columns: any[];
+}
+
+export interface FooterProps {
+    styles?: object;
+}

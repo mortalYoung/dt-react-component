@@ -1,11 +1,13 @@
-import React, { useState } from 'react'
-import { HeaderProps } from './types';
+import React from 'react'
+import { HeaderProps, ContentProps, FooterProps } from './types';
 import { Card } from 'antd';
 import Header from './header';
 import Content from './content';
 
 export interface basePageProps {
-    header: HeaderProps
+    header?: HeaderProps,
+    content?: ContentProps,
+    footer?: FooterProps
 }
 
 export default class BasePage extends React.Component<basePageProps, any> {
@@ -17,8 +19,9 @@ export default class BasePage extends React.Component<basePageProps, any> {
         } = this.props;
         return (
             <Card className="dtc-basePage">
-                {header && <Header {...header} />}
-
+                { header && <Header {...header} /> }
+                { content && <Content {...content} /> }
+                {/* { footer && <Footer {...footer} /> } */}
             </Card>
         )
     }
