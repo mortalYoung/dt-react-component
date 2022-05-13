@@ -219,7 +219,8 @@ stories.add('basePage', () => (
                                 type: 'input',
                                 itemOption: {
                                     name: 'table',
-                                    label: '表'
+                                    label: '表',
+                                    rules: [{ required: true, message: '请输入任务名称' }]
                                 },
                                 childrenOption: {
                                     style: { width: 220 },
@@ -241,58 +242,56 @@ stories.add('basePage', () => (
                             }
                         ]
                     }}
-                    content={{
-                        dataSource: [
-                            {
-                                table: 'test1',
-                                project: '测试项目1',
-                                status: 'finished',
-                                id: 1
-                            },
-                            {
-                                table: 'test2',
-                                project: '测试项目2',
-                                status: 'fail',
-                                id: 2
-                            }
-                        ],
-                        columns: [
-                            {
-                                title: '表',
-                                dataIndex: 'table',
-                                key: 'table'
-                            },
-                            {
-                                title: '项目',
-                                dataIndex: 'project',
-                                key: 'project'
-                            },
-                            {
-                                title: '状态',
-                                dataIndex: 'status',
-                                key: 'status',
-                                render: (val: CicleType) => {
-                                    let text = '';
-                                    switch (val) {
-                                        case 'finished':
-                                            text = '成功'
-                                            break;
-                                        case 'fail':
-                                            text = '失败'
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    return (
-                                        <div>
-                                            <Circle type={val}></Circle>&nbsp;
-                                            <span style={{ color: '#666' }}>{text}</span>
-                                        </div>
-                                    )
+                    dataSource = {[
+                        {
+                            table: 'test1',
+                            project: '测试项目1',
+                            status: 'finished',
+                            id: 1
+                        },
+                        {
+                            table: 'test2',
+                            project: '测试项目2',
+                            status: 'fail',
+                            id: 2
+                        }
+                    ]}
+                    columns = {[
+                        {
+                            title: '表',
+                            dataIndex: 'table',
+                            key: 'table'
+                        },
+                        {
+                            title: '项目',
+                            dataIndex: 'project',
+                            key: 'project'
+                        },
+                        {
+                            title: '状态',
+                            dataIndex: 'status',
+                            key: 'status',
+                            render: (val: CicleType) => {
+                                let text = '';
+                                switch (val) {
+                                    case 'finished':
+                                        text = '成功'
+                                        break;
+                                    case 'fail':
+                                        text = '失败'
+                                        break;
+                                    default:
+                                        break;
                                 }
+                                return (
+                                    <div>
+                                        <Circle type={val}></Circle>&nbsp;
+                                        <span style={{ color: '#666' }}>{text}</span>
+                                    </div>
+                                )
                             }
-                        ]
-                    }}
+                        }
+                    ]}
                 />
             </div>
         </ExampleContainer>
@@ -335,64 +334,62 @@ stories.add('basePage', () => (
                             }
                         ]
                     }}
-                    content={{
-                        dataSource: [
-                            {
-                                table: 'test1',
-                                project: '测试项目1',
-                                status: 'finished',
-                                id: 1
-                            },
-                            {
-                                table: 'test2',
-                                project: '测试项目2',
-                                status: 'fail',
-                                id: 2
-                            }
-                        ],
-                        columns: [
-                            {
-                                title: '表',
-                                dataIndex: 'table',
-                                key: 'table'
-                            },
-                            {
-                                title: '项目',
-                                dataIndex: 'project',
-                                key: 'project'
-                            },
-                            {
-                                title: '状态',
-                                dataIndex: 'status',
-                                key: 'status',
-                                render: (val: CicleType) => {
-                                    let text = '';
-                                    switch (val) {
-                                        case 'finished':
-                                            text = '成功'
-                                            break;
-                                        case 'fail':
-                                            text = '失败'
-                                            break;
-                                        default:
-                                            break;
-                                    }
-                                    return (
-                                        <div>
-                                            <Circle type={val}></Circle>&nbsp;
-                                            <span style={{ color: '#666' }}>{text}</span>
-                                        </div>
-                                    )
+                    dataSource = {[
+                        {
+                            table: 'test1',
+                            project: '测试项目1',
+                            status: 'finished',
+                            id: 1
+                        },
+                        {
+                            table: 'test2',
+                            project: '测试项目2',
+                            status: 'fail',
+                            id: 2
+                        }
+                    ]}
+                    columns = {[
+                        {
+                            title: '表',
+                            dataIndex: 'table',
+                            key: 'table'
+                        },
+                        {
+                            title: '项目',
+                            dataIndex: 'project',
+                            key: 'project'
+                        },
+                        {
+                            title: '状态',
+                            dataIndex: 'status',
+                            key: 'status',
+                            render: (val: CicleType) => {
+                                let text = '';
+                                switch (val) {
+                                    case 'finished':
+                                        text = '成功'
+                                        break;
+                                    case 'fail':
+                                        text = '失败'
+                                        break;
+                                    default:
+                                        break;
                                 }
-                            },
-                            {
-                                title: '操作',
-                                dataIndex: 'operation',
-                                key: 'operation',
-                                render: () => <a>Delete</a>
+                                return (
+                                    <div>
+                                        <Circle type={val}></Circle>&nbsp;
+                                        <span style={{ color: '#666' }}>{text}</span>
+                                    </div>
+                                )
                             }
-                        ]
-                    }}
+                        },
+                        {
+                            title: '操作',
+                            dataIndex: 'operation',
+                            key: 'operation',
+                            render: () => <a>Delete</a>
+                        }
+                    ]}
                 />
             </div>
         </ExampleContainer>

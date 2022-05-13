@@ -24,7 +24,7 @@ const getComponentNum = (): number => {
 };
 const isGitlab = repository.includes('gitlab');
 console.log(
-    '%c欢迎使用 dt-react-component\n使用过程中如有问题欢迎联系 qingyi@dtstack.com ',
+    '%c欢迎使用 dt-react-component\n使用过程中如有问题欢迎联系 jingyu@dtstack.com ',
     'color:#2517b1'
 );
 const stories = storiesOf('综述', module);
