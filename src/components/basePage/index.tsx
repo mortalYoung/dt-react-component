@@ -9,6 +9,8 @@ import {
     Checkbox,
     DatePicker
  } from 'antd';
+ import type { TablePaginationConfig } from 'antd/lib/table';
+import type { FilterValue, SorterResult } from 'antd/lib/table/interface';
  import EasySelect from '../easySelect';
  import {
      ItemProps,
@@ -36,7 +38,8 @@ export default function BasePage (props: basePageProps){
         columns,
         request,
         dataSource,
-        pagination = {}
+        pagination: page = {},
+        otherParams
     } = props;
     const {
         styles,
@@ -47,23 +50,31 @@ export default function BasePage (props: basePageProps){
         hideSearch,
         initialValues,
     } = header;
-    const { pageSize, page, ...other } = pagination;
-    const [ nextPageSize, setPageSize ] = useState(pageSize || 10);
-    const [ current, setCurrent ] = useState(page || 1);
+    const [ pagination, setPage ] = useState(page || { current: 1, pageSize: 20 });
     const [ data, setData ] = useState(dataSource || []);
     const [ total, setTotal ] = useState(0);
+    const [ params, setParams ] = useState(otherParams || {})
 
     const getTableData = (values: Record<string, any>) => {
         request({
             ...values,
-            pageSize: nextPageSize,
-            current
+            ...params,
+            ...pagination
         })
             .then((res: { data: Record<string, any>[]; total: number }) => {
                 const { data : tableData, total: newTotal } = res
                 setData(tableData);
                 newTotal && setTotal(newTotal);
             })
+    }
+
+    const handleTableChange = (
+        nextPagination: TablePaginationConfig,
+		filters?: Record<string, FilterValue | null>,
+		sorter?: SorterResult<any> | SorterResult<any>[],
+    ) => {
+        setPage(nextPagination)
+        setParams({...filters, ...sorter})
     }
 
     const onSearch = async () => {
@@ -177,10 +188,9 @@ export default function BasePage (props: basePageProps){
                 <Table
                     dataSource={data}
                     columns={columns}
+                    onChange={handleTableChange}
                     pagination={{
-                        ...other,
-                        current,
-                        pageSize,
+                        ...pagination,
                         total
                     }}
                 />

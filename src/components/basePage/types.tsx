@@ -1,4 +1,5 @@
 import type { TableProps, FormItemProps, FormProps } from 'antd';
+import type { ColumnsType, TablePaginationConfig } from 'antd/lib/table';
 
 export interface ItemProps {
     /**
@@ -93,7 +94,7 @@ export interface ContentProps {
     /**
     * 表格的列表项
     */
-    columns: TableProps<any>['columns'];
+    columns: ColumnsType;
     /**
      * 页面展示条数
      */
@@ -109,16 +110,7 @@ export interface ContentProps {
     /**
      * 分页的配置项
      */
-    pagination?: {
-        /**
-         * 当前页数
-         */
-        page?: number;
-        /**
-         * 每页条数
-         */
-        pageSize?: number;
-    };
+    pagination?: TablePaginationConfig;
     /**
      * 请求数据
      */
