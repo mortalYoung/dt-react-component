@@ -1,8 +1,9 @@
-import React, { ReactNode, useMemo } from 'react';
+import React, { ReactNode, useMemo, useRef } from 'react';
 import { Utils } from '@dtinsight/dt-utils';
 import { Form, type FormListFieldData, Table, type TableProps } from 'antd';
 import type { FormItemProps, FormListProps, Rule, RuleObject, RuleRender } from 'antd/lib/form';
 import type { ColumnsType, ColumnType as TableColumnType } from 'antd/lib/table';
+import Schema from 'async-validator';
 import classnames from 'classnames';
 import { VList } from 'virtuallist-antd';
 
@@ -113,6 +114,8 @@ export default function InternalTable({
     initialValue,
     ...tableProps
 }: IFormTableProps) {
+    const form = Form.useFormInstance();
+    const table = useRef<HTMLDivElement>(null);
     const {
         tableClassName,
         columns: rawColumns,
@@ -123,10 +126,13 @@ export default function InternalTable({
         ...restProps
     } = tableProps;
 
+    // 每一列对应的 rules
+    const colRules = useRef<Map<ColumnType, Rule[] | undefined>>(new Map());
+
     const convertRawToTableCol = (raw?: ColumnType[]): ColumnsType<FormListFieldData> => {
         if (!raw?.length) return [];
-        return raw.map(
-            ({
+        return raw.map((col) => {
+            const {
                 noStyle,
                 style,
                 className,
@@ -142,75 +148,76 @@ export default function InternalTable({
                 rules: rawRules,
                 render,
                 ...cols
-            }) => {
-                const formItemProps = {
-                    noStyle,
-                    style,
-                    className,
-                    id,
-                    hasFeedback,
-                    validateStatus,
-                    required,
-                    hidden,
-                    initialValue,
-                    messageVariables,
-                    tooltip,
-                };
+            } = col;
+            const formItemProps = {
+                noStyle,
+                style,
+                className,
+                id,
+                hasFeedback,
+                validateStatus,
+                required,
+                hidden,
+                initialValue,
+                messageVariables,
+                tooltip,
+            };
 
-                const isRequired =
-                    required || rawRules?.some((rule) => typeof rule === 'object' && rule.required);
+            const isRequired =
+                required || rawRules?.some((rule) => typeof rule === 'object' && rule.required);
 
-                return {
-                    ...cols,
-                    title: (
-                        <>
-                            {isRequired && <span className="dtc-form__table__column--required" />}
-                            {cols.title}
-                        </>
-                    ),
-                    render(_, record) {
-                        const currentNamePath = [record.name, cols.dataIndex]
-                            .filter(Utils.checkExist)
-                            .flat() as OverrideParameters;
+            return {
+                ...cols,
+                title: (
+                    <>
+                        {isRequired && <span className="dtc-form__table__column--required" />}
+                        {cols.title}
+                    </>
+                ),
+                render(_, record) {
+                    const currentNamePath = [record.name, cols.dataIndex]
+                        .filter(Utils.checkExist)
+                        .flat() as OverrideParameters;
 
-                        const rules: Rule[] | undefined = rawRules?.map((rule) =>
-                            typeof rule === 'function'
-                                ? (form) => rule(form, currentNamePath)
-                                : rule
-                        );
+                    const rules: Rule[] | undefined = rawRules?.map((rule) =>
+                        typeof rule === 'function' ? (form) => rule(form, currentNamePath) : rule
+                    );
 
-                        if (dependencies) {
-                            return (
-                                <Form.Item
-                                    noStyle
-                                    dependencies={
-                                        typeof dependencies === 'function'
-                                            ? dependencies(currentNamePath)
-                                            : dependencies
-                                    }
-                                >
-                                    {(formInstance) => (
-                                        <Form.Item
-                                            name={currentNamePath}
-                                            rules={rules}
-                                            {...formItemProps}
-                                        >
-                                            {render?.(record, currentNamePath, formInstance)}
-                                        </Form.Item>
-                                    )}
-                                </Form.Item>
-                            );
-                        }
+                    if (!colRules.current.has(col)) {
+                        colRules.current.set(col, rules);
+                    }
 
+                    if (dependencies) {
                         return (
-                            <Form.Item name={currentNamePath} rules={rules} {...formItemProps}>
-                                {render?.(record, currentNamePath)}
+                            <Form.Item
+                                noStyle
+                                dependencies={
+                                    typeof dependencies === 'function'
+                                        ? dependencies(currentNamePath)
+                                        : dependencies
+                                }
+                            >
+                                {(formInstance) => (
+                                    <Form.Item
+                                        name={currentNamePath}
+                                        rules={rules}
+                                        {...formItemProps}
+                                    >
+                                        {render?.(record, currentNamePath, formInstance)}
+                                    </Form.Item>
+                                )}
                             </Form.Item>
                         );
-                    },
-                };
-            }
-        );
+                    }
+
+                    return (
+                        <Form.Item name={currentNamePath} rules={rules} {...formItemProps}>
+                            {render?.(record, currentNamePath)}
+                        </Form.Item>
+                    );
+                },
+            };
+        });
     };
 
     const columns = useMemo(() => {
@@ -231,11 +238,70 @@ export default function InternalTable({
         });
     }, []);
 
+    const listRules = useMemo(() => {
+        if (!virtual) return rules;
+        const res = rules || [];
+        // 用于 antd 的 validateFields 方法只校验渲染出 dom 的数据，所以针对开启了虚拟滚动的表单，需要手动校验所有数据
+        res.push({
+            validator: (_, value) => {
+                const descriptors = Array.from(colRules.current.entries()).reduce<
+                    Record<string, any>
+                >((acc, [col, rules]) => {
+                    if (!rules) return acc;
+                    acc[col.dataIndex as string] = rules.reduce(
+                        (acc, cur) => ({ ...acc, ...cur }),
+                        {}
+                    );
+                    return acc;
+                }, {});
+                // 开启了虚拟滚动的表单默认启用 scrollToFirstError 并且第一个失败时停止后续数据的校验
+                return createPromise(value, descriptors)
+                    .then(() => {
+                        console.log('success');
+                    })
+                    .catch((err) => {
+                        if (Array.isArray(err) && err.length) {
+                            const { index } = err[0];
+                            window.requestAnimationFrame(() => {
+                                const overflowContainer =
+                                    table.current?.querySelector('.virtuallist')?.parentElement;
+                                if (!overflowContainer) return;
+                                const lineHeight =
+                                    overflowContainer
+                                        .querySelector('.ant-table-row')
+                                        ?.getBoundingClientRect().height || 0;
+                                const top = index * lineHeight;
+                                overflowContainer.addEventListener(
+                                    'scrollend',
+                                    () => {
+                                        const names = err.map((i) =>
+                                            [name, i.index, i.field].flat()
+                                        );
+                                        form.validateFields(names);
+                                    },
+                                    { once: true }
+                                );
+                                // 当需要移动的距离超过 5000 时, 不使用平滑滚动，防止距离过大导致连续空白页面
+                                const duration = Math.abs(overflowContainer.scrollTop - top);
+                                overflowContainer.scrollTo({
+                                    top,
+                                    behavior: duration > 5000 ? 'auto' : 'smooth',
+                                });
+                            });
+                        }
+                        return Promise.reject(err);
+                    });
+            },
+        });
+        return res;
+    }, [virtual, rules]);
+
     return (
-        <Form.List name={name} rules={rules} initialValue={initialValue}>
+        <Form.List name={name} rules={listRules} initialValue={initialValue}>
             {(fields, ope, meta) => (
                 <Table<FormListFieldData>
                     className={classnames(className, tableClassName)}
+                    ref={table}
                     rowKey={rowKey || 'key'}
                     dataSource={fields}
                     pagination={false}
@@ -253,4 +319,43 @@ export default function InternalTable({
             )}
         </Form.List>
     );
+}
+
+/**
+ * 创建一个失败即返回的 Promise
+ */
+function createPromise(value: any[], descriptors: any) {
+    const validator = new Schema(descriptors);
+
+    function validate(index: number) {
+        return new Promise<void>((resolve, reject) => {
+            validator.validate(value[index], (errors: any) => {
+                if (errors) {
+                    return reject(errors.map((i: any) => ({ ...i, index })));
+                }
+                resolve();
+            });
+        });
+    }
+
+    async function* createAsyncGenerator() {
+        for (let index = 0; index < value.length; index++) {
+            yield await validate(index);
+        }
+    }
+
+    const asyncGenerator = createAsyncGenerator();
+    async function chain(): Promise<void> {
+        try {
+            let res = await asyncGenerator.next();
+            while (!res.done) {
+                res = await asyncGenerator.next();
+            }
+            return Promise.resolve();
+        } catch (error) {
+            return Promise.reject(error);
+        }
+    }
+
+    return chain();
 }

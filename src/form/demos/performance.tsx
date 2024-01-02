@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Input } from 'antd';
+import { Button, Input, message } from 'antd';
 import { EllipsisText, Form } from 'dt-react-component';
 
 import { getMockPerformanceData } from './data';
@@ -8,6 +8,7 @@ export default () => {
     const [form] = Form.useForm();
 
     const [loading, setLoading] = useState(false);
+    const [validating, setValidating] = useState(false);
 
     const [rowKeys, setRowKeys] = useState<React.Key[]>([]);
 
@@ -22,6 +23,20 @@ export default () => {
             });
     };
 
+    const handleSubmit = () => {
+        setValidating(true);
+        window.setTimeout(() => {
+            form.validateFields()
+                .then((values) => {
+                    message.success('校验成功');
+                    console.log('values:', values);
+                })
+                .finally(() => {
+                    setValidating(false);
+                });
+        }, 1000);
+    };
+
     useEffect(() => {
         getData();
     }, []);
@@ -34,6 +49,13 @@ export default () => {
                 rowSelection={{
                     selectedRowKeys: rowKeys,
                     onChange: setRowKeys,
+                }}
+                footer={() => {
+                    return (
+                        <Button ghost loading={validating} type="primary" onClick={handleSubmit}>
+                            submit
+                        </Button>
+                    );
                 }}
                 virtual
                 scroll={{
@@ -50,6 +72,10 @@ export default () => {
                             {
                                 required: true,
                                 message: 'Please Input Name!',
+                            },
+                            {
+                                min: 6,
+                                message: 'Input Name must be at least 6 characters',
                             },
                         ],
                         render: () => <Input placeholder="Name" />,
